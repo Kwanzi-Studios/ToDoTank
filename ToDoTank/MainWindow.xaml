@@ -21,7 +21,70 @@
         <local:BooleanToWidthConverter x:Key="BooleanToWidthConverter"
                                        CollapsedWidth="0"
                                        ExpandedWidth="320"/>
-        <local:BooleanToAngleConverter x:Key="BooleanToAngleConverter"/>
+        <local:BooleanToArrowConverter x:Key="BooleanToArrowConverter"/>
+        <!-- Custom style for the side toggle button -->
+        <Style x:Key="SideToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+            <Setter Property="Background" Value="#2A2A4A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter x:Name="contentPresenter"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Hover state - primary visual feedback -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#3A3A6A"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="Black"
+                                                         Direction="320"
+                                                         ShadowDepth="2"
+                                                         BlurRadius="8"
+                                                         Opacity="0.35"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <!-- Pressed state -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1E1E38"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="Black"
+                                                         Direction="320"
+                                                         ShadowDepth="1"
+                                                         BlurRadius="4"
+                                                         Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <!-- Subtle indicator when panel is open (optional - remove if unwanted) -->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="BorderThickness" Value="0,0,0,3"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#5A5AAA"/>
+                            </Trigger>
+                            <!-- Disabled (if ever used) -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -29,11 +92,15 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
+            <!-- Main content / tank -->
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
+            <!-- Fixed-width toggle strip column -->
+            <ColumnDefinition Width="32"/>
+            <!-- Collapsible right panel -->
+            <ColumnDefinition Width="{Binding ElementName=ToggleButton, Path=IsChecked, Converter={StaticResource BooleanToWidthConverter}}"/>
         </Grid.ColumnDefinitions>
         <!-- Top bar - minimize & close -->
-        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
                     Orientation="Horizontal" HorizontalAlignment="Right"
                     VerticalAlignment="Center" Margin="0,0,12,0">
             <Button x:Name="MinimizeButton"
@@ -59,11 +126,10 @@
                 Grid.Row="1" Grid.Column="0"
                 ClipToBounds="True"
                 Background="{Binding TankBackground, RelativeSource={RelativeSource AncestorType=Window}}"/>
-        <!-- Right sidebar -->
+        <!-- Right sidebar / settings panel -->
         <Grid x:Name="RightPanel"
-              Grid.Row="1" Grid.Column="1"
-              Background="#1A1A2E"
-              Width="{Binding ElementName=ToggleButton, Path=IsChecked, Converter={StaticResource BooleanToWidthConverter}}">
+              Grid.Row="1" Grid.Column="2"
+              Background="#1A1A2E">
             <StackPanel Margin="16">
                 <TextBlock Text="Task Categories"
                            FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,12"/>
@@ -73,10 +139,10 @@
                     <Button Content="New..." Width="90" Margin="0,0,12,0" Click="NewCategory_Click"/>
                     <Button Content="Delete" Width="90" Click="DeleteCategory_Click"/>
                 </StackPanel>
-                <!-- Customization -->
+                <!-- Customization section -->
                 <TextBlock Text="New Task Settings"
                            FontSize="16" Foreground="White" Margin="0,24,0,8"/>
-                <TextBlock Text="Default Font Size" Foreground="WhiteSmoke" Margin="0,0,0,4"/>
+                <TextBlock Text="Font Size" Foreground="WhiteSmoke" Margin="0,0,0,4"/>
                 <Slider x:Name="DefaultFontSizeSlider" Minimum="8" Maximum="72" Value="24"
                         Height="20" Margin="0,0,0,16" TickFrequency="4" IsSnapToTickEnabled="True"/>
                 <TextBlock Text="Text Color" Foreground="WhiteSmoke" Margin="0,0,0,4"/>
@@ -85,7 +151,8 @@
                                   Height="30" Margin="0,0,0,16"
                                   DisplayColorAndName="True"
                                   ShowRecentColors="True"
-                                  ShowAvailableColors="True"/>
+                                  ShowAvailableColors="True"
+                                  ShowStandardColors="True"/>
                 <TextBlock Text="Priority Color" Foreground="WhiteSmoke" Margin="0,0,0,4"/>
                 <xctk:ColorPicker x:Name="PriorityColorPicker"
                                   SelectedColor="Orange"
@@ -93,30 +160,29 @@
                                   Height="30" Margin="0,0,0,16"
                                   DisplayColorAndName="True"
                                   ShowRecentColors="True"
-                                  ShowAvailableColors="True"/>
+                                  ShowAvailableColors="True"
+                                  ShowStandardColors="True"/>
                 <TextBlock Text="Tank Background" Foreground="WhiteSmoke" Margin="0,0,0,4"/>
                 <xctk:ColorPicker x:Name="BackgroundColorPicker"
                                   SelectedColor="#0F0F1A"
                                   Height="30" Margin="0,0,0,12"
                                   DisplayColorAndName="True"
                                   ShowRecentColors="True"
-                                  ShowAvailableColors="True"/>
-                <TextBlock Text="Current category tasks will float in the tank."
-                           TextWrapping="Wrap" FontSize="13" Foreground="#AAAAAA" Margin="0,12,0,0"/>
+                                  ShowAvailableColors="True"
+                                  ShowStandardColors="True"/>
             </StackPanel>
         </Grid>
-        <!-- Sidebar toggle -->
+        <!-- Toggle button – fixed position, arrow via content binding, full vertical stretch -->
         <ToggleButton x:Name="ToggleButton"
                       Grid.Row="1" Grid.Column="1"
-                      Width="28" Height="80"
-                      HorizontalAlignment="Right" VerticalAlignment="Center"
-                      Background="#2A2A4A" BorderThickness="0" Foreground="White"
-                      Content="&gt;" FontSize="18" IsChecked="False">
-            <ToggleButton.RenderTransform>
-                <RotateTransform Angle="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}, Converter={StaticResource BooleanToAngleConverter}}"/>
-            </ToggleButton.RenderTransform>
-        </ToggleButton>
-        <!-- Bottom input -->
+                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Style="{StaticResource SideToggleButtonStyle}"
+                      Content="{Binding IsChecked, RelativeSource={RelativeSource Self}, Converter={StaticResource BooleanToArrowConverter}}"
+                      Foreground="White"
+                      FontSize="24"
+                      FontWeight="Bold"
+                      IsChecked="False"/>
+        <!-- Bottom input area (only in main column) -->
         <Grid Grid.Row="1" Grid.Column="0" VerticalAlignment="Bottom" Margin="16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
